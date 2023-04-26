@@ -32,37 +32,8 @@ const SearchBar: FC<BooksProps> = () => {
     const validateIsbn = /^((\d{10})|(\d{13}))$/;
     const inputIsbn = target.isbnValue.value.replace(/-/g, "");
     if (validateIsbn.test(inputIsbn)) {
-      const checksum = (digits: number[], base: number) => {
-        let factor = 1;
-        let sum = 0;
-        for (let i = digits.length - 1; i >= 0; i--) {
-          const digit = digits[i];
-          sum += digit * factor;
-          factor = base - factor;
-        }
-        return sum % base;
-      };
-      const isbn10Checksum = (digits: number[]) => {
-        const sum = digits.reduce((acc, val, idx) => {
-          return acc + val * (10 - idx);
-        }, 0);
-        return (11 - (sum % 11)) % 11;
-      };
-      const isbn13Checksum = (digits: number[]) => {
-        const sum = digits.reduce((acc, val, idx) => {
-          const weight = idx % 2 === 0 ? 1 : 3;
-          return acc + val * weight;
-        }, 0);
-        return (10 - (sum % 10)) % 10;
-      };
-      const isbn = inputIsbn.split("");
-      const isbn10 = isbn.slice(0, 9).map((digit) => parseInt(digit, 10));
-      const isbn10CheckDigit =
-        isbn[9].toLowerCase() === "x" ? 10 : parseInt(isbn[9], 10);
-      const isbn13 = isbn.map((digit) => parseInt(digit, 10));
-      const isbn10IsValid = isbn10Checksum(isbn10) === isbn10CheckDigit;
-      const isbn13IsValid = isbn13Checksum(isbn13.slice(0, 12)) === isbn13[12];
-      if (isbn10IsValid || isbn13IsValid) {
+      const isbn10IsValid = validateIsbn10(inputIsbn);
+      if (isbn10IsValid) {
         // redirect to /BooksInformation/:isbn
         navigate(`/BooksInformation/${target.isbnValue.value}`);
       } else {
@@ -72,51 +43,26 @@ const SearchBar: FC<BooksProps> = () => {
       alert("Invalid ISBN number");
     }
 
-    //WAY 1
-    // const inputValue = target.isbnValue.value;
-    // const isbn10Regex = /^(?:\d{9}X|\d{10})$/;
-    // const isbn13Regex = /^(?:\d{13})$/;
-
-    // if (isbn10Regex.test(inputValue)) {
-    //   navigate(`/BooksInformation/${inputValue}`);
-    // } else if (isbn13Regex.test(inputValue)) {
-    //   navigate(`/BooksInformation/${inputValue}`);
-    // } else {
-    //   // CHANGE TO A UI
-    //   alert("Invalid ISBN format. Please enter a valid ISBN 10 or ISBN 13.");
-    // }
-
-    //WAY 2 (SHORTER VERSION WITH UI VALIDATION)
-
-    // const regex = /^(?:\d{9}[\dXx]|\d{13})$/;
-    // const isbn = target.isbnValue.value.trim();
-    // if (!regex.test(isbn)) {
-    //   setError("Invalid ISBN format. Please enter a 10 or 13 digit number.");
-    //   return;
-    // }
-
-    // navigate("/BooksInformation/" + isbn);
+    function validateIsbn10(isbn: string): boolean {
+      isbn = isbn.replace(/-/g, ''); // remove dashes, if any
+      if (isbn.length !== 10 || !/^\d{9}[\d|X]$/.test(isbn)) {
+        return false; // invalid format
+      }
+    
+      // calculate checksum
+      const sum = isbn.split('')
+        .map((digit, index) => {
+          if (digit === 'X') {
+            digit = '10';
+          }
+          const weight = 10 - index;
+          return parseInt(digit) * weight;
+        })
+        .reduce((prev, curr) => prev + curr);
+    
+      return sum % 11 === 0; // valid if checksum is divisible by 11
+    }
   };
-  // <form onSubmit={handleSubmit}>
-  //     <Flex align="center" m={100}>
-  //     <Input
-  //       type="text"
-  //       name="isbnValue"
-  //       placeholder="Input 10 or 13 ISBN Number"
-  //       size="md"
-  //     />
-  //     <span>
-  //         <IconButton
-  //           type="submit"
-  //           aria-label="Search database"
-  //           icon={<SearchIcon />}
-  //         />
-  //       </span>
-  //     </Flex>
-  //     <Box alignItems="center" marginLeft="100">
-  //     {error && <Box color="red">{error}</Box>}
-  //     </Box>
-  //   </form>
 
   return (
       <form onSubmit={handleSubmit}>
