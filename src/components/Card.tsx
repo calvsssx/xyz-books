@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { IBookData } from "../types/book.types";
 
-export default function Card({book}: {book: IBookData}) {
+export default function Card({book}: {book: any}) {
   return (
     <Center py={6}>
       <Box
